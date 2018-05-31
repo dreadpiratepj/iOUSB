@@ -80,6 +80,29 @@ void DeviceAdded(void *userInfo, io_iterator_t iterator)
     NSMutableArray *strings = [[NSMutableArray alloc] init];
     struct USBNotification *notificationInfo = (struct USBNotification *)userInfo;
     
+    // Iterate over all devices..
+    while ((usbDevice = IOIteratorNext(iterator))) {
+        getStringsForUSBDevice(usbDevice, notificationInfo, strings);
+        
+        // Register for Device Notifications.. IE: Disconnected Notification..
+        kr = IOServiceAddInterestNotification(notificationInfo->notificationPort,
+                                              usbDevice,
+                                              kIOGeneralInterest,
+                                              DeviceDisconnected,
+                                              notificationInfo,
+                                              &notificationInfo->notification
+                                              );
+        
+        // Cleanup
+        kr = IOObjectRelease(usbDevice);
+    }
+    
+    void(^deviceCallback)(NSArray<NSString *> *info) = (typeof(deviceCallback))imp_getBlock((IMP)notificationInfo->deviceCallback);
+    deviceCallback(strings);
+}
+
+void getStringsForUSBDevice(io_service_t usbDevice, struct USBNotification *notificationInfo, NSMutableArray *strings) {
+    
     //Function to retrieve a USB property..
     int (^getUSBProperty)(io_service_t, NSString *) = ^int(io_service_t device, NSString *propertyName) {
         CFNumberRef number = (CFNumberRef)IORegistryEntryCreateCFProperty(device, (__bridge CFStringRef)(propertyName), kCFAllocatorDefault, 0);
@@ -98,61 +121,43 @@ void DeviceAdded(void *userInfo, io_iterator_t iterator)
         return (IOUSBDeviceInterface **)getInterface(device, kIOUSBDeviceUserClientTypeID, kIOUSBDeviceInterfaceID);
     };
     
-    // Iterate over all devices..
-    while ((usbDevice = IOIteratorNext(iterator))) {
-        UInt32 locationID;
-
-        io_name_t devName;
-        io_name_t className;
-        io_string_t pathName;
-        io_string_t planeName;
+    UInt32 locationID;
+    
+    io_name_t devName;
+    io_name_t className;
+    io_string_t pathName;
+    io_string_t planeName;
+    
+    IORegistryEntryGetName(usbDevice, devName);
+    IOObjectGetClass(usbDevice, className);
+    IORegistryEntryGetPath(usbDevice, kIOServicePlane, pathName);
+    IORegistryEntryGetPath(usbDevice, kIOUSBPlane, planeName);
+    int vendorId = getUSBProperty(usbDevice, [NSString stringWithUTF8String:kUSBVendorID]);
+    int productId = getUSBProperty(usbDevice, [NSString stringWithUTF8String:kUSBProductID]);
+    
+    [strings addObject:[NSString stringWithFormat:@"Device Name: %s", devName]];
+    [strings addObject:[NSString stringWithFormat:@"Device Class: %s", className]];
+    [strings addObject:[NSString stringWithFormat:@"Device Plane: %s", planeName]];
+    [strings addObject:[NSString stringWithFormat:@"Device Path: %s", pathName]];
+    [strings addObject:[NSString stringWithFormat:@"VendorID: 0x%04X", vendorId]];
+    [strings addObject:[NSString stringWithFormat:@"ProductID: 0x%04X", productId]];
+    
+    // Get a USBDeviceInterface from the plugin.. and release the plugin
+    WriteToUSB(usbDevice, strings);
+    
+    IOUSBDeviceInterface **deviceInterface = getDeviceInterface(usbDevice);
+    if (deviceInterface)
+    {
+        // Get the location ID from the USB Interface
+        (*deviceInterface)->GetLocationID(deviceInterface, &locationID);
+        [strings addObject:[NSString stringWithFormat:@"LocationID: 0x%x", locationID]];
         
-        IORegistryEntryGetName(usbDevice, devName);
-        IOObjectGetClass(usbDevice, className);
-        IORegistryEntryGetPath(usbDevice, kIOServicePlane, pathName);
-        IORegistryEntryGetPath(usbDevice, kIOUSBPlane, planeName);
-        int vendorId = getUSBProperty(usbDevice, [NSString stringWithUTF8String:kUSBVendorID]);
-        int productId = getUSBProperty(usbDevice, [NSString stringWithUTF8String:kUSBProductID]);
-        
-        [strings addObject:[NSString stringWithFormat:@"Device Name: %s", devName]];
-        [strings addObject:[NSString stringWithFormat:@"Device Class: %s", className]];
-        [strings addObject:[NSString stringWithFormat:@"Device Plane: %s", planeName]];
-        [strings addObject:[NSString stringWithFormat:@"Device Path: %s", pathName]];
-        [strings addObject:[NSString stringWithFormat:@"VendorID: 0x%04X", vendorId]];
-        [strings addObject:[NSString stringWithFormat:@"ProductID: 0x%04X", productId]];
-        
-        // Get a USBDeviceInterface from the plugin.. and release the plugin
-        WriteToUSB(notificationInfo, usbDevice, strings);
-        
-        IOUSBDeviceInterface **deviceInterface = getDeviceInterface(usbDevice);
-        if (deviceInterface)
-        {
-            // Get the location ID from the USB Interface
-            (*deviceInterface)->GetLocationID(deviceInterface, &locationID);
-            [strings addObject:[NSString stringWithFormat:@"LocationID: 0x%x", locationID]];
-            
-            // Cleanup
-            (*deviceInterface)->Release(deviceInterface);
-            deviceInterface = nil;
-        }
-        
-        
-        // Register for Device Notifications.. IE: Disconnected Notification..
-        kr = IOServiceAddInterestNotification(notificationInfo->notificationPort,
-                                              usbDevice,
-                                              kIOGeneralInterest,
-                                              DeviceDisconnected,
-                                              notificationInfo,
-                                              &notificationInfo->notification
-                                              );
-        
-        [strings addObject:@"\n"];
         // Cleanup
-        kr = IOObjectRelease(usbDevice);
+        (*deviceInterface)->Release(deviceInterface);
+        deviceInterface = nil;
     }
     
-    void(^deviceCallback)(NSArray<NSString *> *info) = (typeof(deviceCallback))imp_getBlock((IMP)notificationInfo->deviceCallback);
-    deviceCallback(strings);
+    [strings addObject:@"\n"];
 }
 
 // When a device notification has been received, this function is called.
@@ -282,7 +287,7 @@ int buildAndRunPayload(IOUSBDeviceInterface300** dev, IOUSBInterfaceInterface300
 }
 
 // Test writing to the Nintendo Switch's USB..
-void WriteToUSB(struct USBNotification *notificationInfo, io_service_t usbDevice, NSMutableArray* strings)
+void WriteToUSB(io_service_t usbDevice, NSMutableArray* strings)
 {
     //Function to retrieve a USBDevice interface..
     IOUSBDeviceInterface300** (^getDeviceInterface)(io_service_t) = ^IOUSBDeviceInterface300**(io_service_t device) {
@@ -444,38 +449,10 @@ void WriteToUSB(struct USBNotification *notificationInfo, io_service_t usbDevice
         return nil;
     }
     
-    // Iterate over all usb devices..
-    while ((device = IOIteratorNext(iter)))
-    {
-        io_name_t devName;
-        io_name_t className;
-        io_string_t pathName;
-        io_string_t planeName;
-        
-        IORegistryEntryGetName(device, devName);
-        IOObjectGetClass(device, className);
-        IORegistryEntryGetPath(device, kIOServicePlane, pathName);
-        IORegistryEntryGetPath(device, kIOUSBPlane, planeName);
-        
-        int vendorId = [self getDeviceVendorId:device];
-        int productId = [self getDeviceProductId:device];
-        NSString *serialNumber = [self getDeviceSerialNumber:device];
-        NSString *manufacturer = [self getDeviceManufacturer:device];
-        
-        [strings addObject:[NSString stringWithFormat:@"Device Name: %s", devName]];
-        [strings addObject:[NSString stringWithFormat:@"Device Class: %s", className]];
-        [strings addObject:[NSString stringWithFormat:@"Device Plane: %s", pathName]];
-        [strings addObject:[NSString stringWithFormat:@"Device Path: %s", planeName]];
-
-        [strings addObject:[NSString stringWithFormat:@"VendorID: %04X", vendorId]];
-        [strings addObject:[NSString stringWithFormat:@"ProductID: %04X", productId]];
-        [strings addObject:[NSString stringWithFormat:@"Device Serial Number: %@", serialNumber]];
-        [strings addObject:[NSString stringWithFormat:@"Device Manufacturer: %@", manufacturer]];
-
-        [strings addObject:@"\n"];
-        IOObjectRelease(device);
+    // Iterate over all devices..
+    while ((device = IOIteratorNext(iter))) {
+        getStringsForUSBDevice(device, nil, strings);
     }
-    
     IOObjectRelease(iter);
     return strings;
 }
