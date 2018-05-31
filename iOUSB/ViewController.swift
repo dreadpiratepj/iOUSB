@@ -33,11 +33,11 @@ class ViewController: UIViewController {
         EAAccessoryManager.shared().registerForLocalNotifications()
         
         //Setup Serial Communications
-        listDevices()
+        //listDevices()
         
         USB().addDeviceListener { [weak self] strings in
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                let alert = UIAlertController(title: "Devices", message: strings?.joined(separator: "\n"), preferredStyle: .alert)
+                let alert = UIAlertController(title: "Devices", message: USB().getDevices().joined(separator: "\n"), preferredStyle: .alert)
                 alert .addAction(UIAlertAction(title: "Okay", style: .default, handler: nil))
                 self?.present(alert, animated: true, completion: nil)
             }
