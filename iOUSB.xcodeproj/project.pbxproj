@@ -8,22 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		5E1DB41820B9E3E000AE3D04 /* USB.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E1DB41720B9E3E000AE3D04 /* USB.m */; };
-		5E1DB4BD20B9EF2E00AE3D04 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E1DB3F620B9E21A00AE3D04 /* IOKit.framework */; };
 		5E34314C20B2722B00EFD05B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E34314B20B2722B00EFD05B /* AppDelegate.swift */; };
 		5E34314E20B2722B00EFD05B /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E34314D20B2722B00EFD05B /* ViewController.swift */; };
 		5E34315120B2722B00EFD05B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E34314F20B2722B00EFD05B /* Main.storyboard */; };
 		5E34315320B2722C00EFD05B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5E34315220B2722C00EFD05B /* Assets.xcassets */; };
 		5E34315620B2722C00EFD05B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E34315420B2722C00EFD05B /* LaunchScreen.storyboard */; };
-		5E34315F20B2724A00EFD05B /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E34315E20B2724A00EFD05B /* ExternalAccessory.framework */; };
 		5E34316320B29A2E00EFD05B /* Serial.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5E34316220B29A2E00EFD05B /* Serial.mm */; };
 		5E8397FA20B39FFF0058360A /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E8397F920B39FFF0058360A /* main.swift */; };
+		9D70068920BFD2730074F4A7 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9D70068820BFD2730074F4A7 /* IOKit.framework */; };
+		9D70068D20BFDC180074F4A7 /* intermezzo.bin in Resources */ = {isa = PBXBuildFile; fileRef = 9D70068B20BFDC180074F4A7 /* intermezzo.bin */; };
+		9D70068E20BFDC180074F4A7 /* fusee.bin in Resources */ = {isa = PBXBuildFile; fileRef = 9D70068C20BFDC180074F4A7 /* fusee.bin */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		5E1DB3F620B9E21A00AE3D04 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
 		5E1DB41620B9E3E000AE3D04 /* USB.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = USB.h; sourceTree = "<group>"; };
 		5E1DB41720B9E3E000AE3D04 /* USB.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = USB.m; sourceTree = "<group>"; };
-		5E1DB4BB20B9EE5E00AE3D04 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
 		5E34314820B2722B00EFD05B /* iOUSB.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOUSB.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E34314B20B2722B00EFD05B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5E34314D20B2722B00EFD05B /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -31,11 +30,13 @@
 		5E34315220B2722C00EFD05B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5E34315520B2722C00EFD05B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		5E34315720B2722C00EFD05B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		5E34315E20B2724A00EFD05B /* ExternalAccessory.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExternalAccessory.framework; path = System/Library/Frameworks/ExternalAccessory.framework; sourceTree = SDKROOT; };
 		5E34316020B29A2E00EFD05B /* iOUSB-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "iOUSB-Bridging-Header.h"; sourceTree = "<group>"; };
 		5E34316120B29A2E00EFD05B /* Serial.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Serial.h; sourceTree = "<group>"; };
 		5E34316220B29A2E00EFD05B /* Serial.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = Serial.mm; sourceTree = "<group>"; };
 		5E8397F920B39FFF0058360A /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		9D70068820BFD2730074F4A7 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
+		9D70068B20BFDC180074F4A7 /* intermezzo.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = intermezzo.bin; sourceTree = "<group>"; };
+		9D70068C20BFDC180074F4A7 /* fusee.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = fusee.bin; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,8 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5E1DB4BD20B9EF2E00AE3D04 /* IOKit.framework in Frameworks */,
-				5E34315F20B2724A00EFD05B /* ExternalAccessory.framework in Frameworks */,
+				9D70068920BFD2730074F4A7 /* IOKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +71,7 @@
 		5E34314A20B2722B00EFD05B /* iOUSB */ = {
 			isa = PBXGroup;
 			children = (
+				9D70068A20BFDC180074F4A7 /* payloads */,
 				5E34314B20B2722B00EFD05B /* AppDelegate.swift */,
 				5E34314D20B2722B00EFD05B /* ViewController.swift */,
 				5E34314F20B2722B00EFD05B /* Main.storyboard */,
@@ -90,11 +91,18 @@
 		5E34315D20B2724900EFD05B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				5E1DB3F620B9E21A00AE3D04 /* IOKit.framework */,
-				5E1DB4BB20B9EE5E00AE3D04 /* IOKit.framework */,
-				5E34315E20B2724A00EFD05B /* ExternalAccessory.framework */,
+				9D70068820BFD2730074F4A7 /* IOKit.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9D70068A20BFDC180074F4A7 /* payloads */ = {
+			isa = PBXGroup;
+			children = (
+				9D70068B20BFDC180074F4A7 /* intermezzo.bin */,
+				9D70068C20BFDC180074F4A7 /* fusee.bin */,
+			);
+			path = payloads;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -164,6 +172,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D70068D20BFDC180074F4A7 /* intermezzo.bin in Resources */,
+				9D70068E20BFDC180074F4A7 /* fusee.bin in Resources */,
 				5E34315620B2722C00EFD05B /* LaunchScreen.storyboard in Resources */,
 				5E34315320B2722C00EFD05B /* Assets.xcassets in Resources */,
 				5E34315120B2722B00EFD05B /* Main.storyboard in Resources */,
