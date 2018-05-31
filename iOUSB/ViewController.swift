@@ -147,20 +147,6 @@ extension ViewController {
     }
     
     func listDevices() {
-        let fileManager = FileManager.default
-        if let pathURL = URL(string: "/dev") {
-            do {
-                let fileURLs = try fileManager.contentsOfDirectory(at: pathURL, includingPropertiesForKeys: nil)
-                deviceList = fileURLs.map({ $0.path }).sorted()
-                tableView.reloadData()
-            } catch {
-                print("Error while enumerating files \(pathURL): \(error.localizedDescription)")
-            }
-        }
-        else {
-            print("Error opening path: /dev")
-        }
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             let alert = UIAlertController(title: "Devices", message: USB().getDevices().joined(separator: "\n"), preferredStyle: .alert)
             alert .addAction(UIAlertAction(title: "Okay", style: .default, handler: nil))
